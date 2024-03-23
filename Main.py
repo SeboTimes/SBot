@@ -98,7 +98,7 @@ async def on_message(message: dc.Message):
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def ping(ctx: commands.Context):
-    await response(ctx, f"Pong: {bot.latency}ms")
+    await response(ctx, f"Pong: {int(bot.latency * 1000)}ms")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def wallet(ctx: commands.Context):
