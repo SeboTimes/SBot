@@ -72,7 +72,7 @@ async def on_ready():
     global infoMsg
 
     await bot.change_presence(activity=dc.Activity(type=dc.ActivityType.playing, name="with joe mama"))
-    print("Main", f"Logged in as {bot.user} on {len(bot.guilds)} guilds!")
+    print("Main", f"Logged in as {bot.user} on {len(bot.guilds)} guild(s)!")
 
     print("Database", "Syncing users...")
     for guild in bot.guilds:
