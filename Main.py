@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Literal
 from hashlib import sha256
 from os.path import exists
 from os import system
