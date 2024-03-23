@@ -2,6 +2,11 @@ from bs4 import BeautifulSoup as BS
 from json import loads, dumps
 from os.path import exists
 from requests import get
+from os import mkdir
+
+for folder in ["Data/", "Sounds/"]:
+    if not exists(folder):
+        mkdir(folder)
 
 for dataFile in ["Cryptos.json", "Items.json", "Users.json"]:
     if not exists(f"Data/{dataFile}"):
