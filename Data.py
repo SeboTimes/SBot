@@ -13,16 +13,6 @@ for dataFile in ["Cryptos.json", "Items.json", "Users.json"]:
         with open(f"Data/{dataFile}", "w") as file:
             file.write("{}")
 
-def isConnected():
-    try:
-        get("https://www.google.com/")
-        return True
-    except:
-        return False
-
-while not isConnected():
-    pass
-
 cashSymbol = "$"
 
 def readData(which: str) -> dict:
