@@ -5,8 +5,6 @@ from requests import get
 
 from Scripts.SFunctions import *
 
-cashSymbol = "$"
-
 def readData(which: str) -> dict:
     with open(f"Data/{which}.json", "r") as dataFile:
         return loads(dataFile.read())

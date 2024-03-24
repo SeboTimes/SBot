@@ -45,7 +45,7 @@ async def ping(ctx: commands.Context):
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def wallet(ctx: commands.Context):
     data = readData("Users")
-    await response(ctx, f"In your wallet are `{data[ctx.author.name]['cash']}{cashSymbol}`.")
+    await response(ctx, f"In your wallet are `{data[ctx.author.name]['cash']}€`.")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def inventory(ctx: commands.Context):
@@ -74,7 +74,7 @@ async def prices(ctx: commands.Context):
         items = readData(inventory)
         itemText = ""
         for item in items:
-            itemText += f"\n`{item}: {items[item]}{cashSymbol}`"
+            itemText += f"\n`{item}: {items[item]}€`"
         output[inventory] = itemText
 
     await response(ctx, f"Item prices:{output['Items']}\n\nCrypto prices:{output['Cryptos']}")
@@ -88,14 +88,14 @@ async def item(ctx: commands.Context, action: str, item: str, amout: int = 1):
 
     if action == "buy":
         if data[ctx.author.name]["cash"] >= items[item] * amout:
-            await response(ctx, f"You bought `{amout}x {item}` for `{items[item] * amout}{cashSymbol}`.")
+            await response(ctx, f"You bought `{amout}x {item}` for `{items[item] * amout}€`.")
             data[ctx.author.name]["items"][item] += 1 * amout
             data[ctx.author.name]["cash"] -= items[item] * amout
         else:
             await response(ctx, f"You don't have enough money.")
     elif action == "sell":
         if data[ctx.author.name]["items"][item] >= amout:
-            await response(ctx, f"You sold `{amout}x {item}` for `{items[item] * amout}{cashSymbol}`.")
+            await response(ctx, f"You sold `{amout}x {item}` for `{items[item] * amout}€`.")
             data[ctx.author.name]["items"][item] -= amout
             data[ctx.author.name]["cash"] += items[item] * amout
         else:
@@ -112,14 +112,14 @@ async def crypto(ctx: commands.Context, action: str, crypto: str, amout: int = 1
 
     if action == "buy":
         if data[ctx.author.name]["cash"] >= items[crypto] * amout:
-            await response(ctx, f"You bought `{amout}x {crypto}` for `{items[crypto] * amout}{cashSymbol}`.")
+            await response(ctx, f"You bought `{amout}x {crypto}` for `{items[crypto] * amout}€`.")
             data[ctx.author.name]["cryptos"][crypto] += 1 * amout
             data[ctx.author.name]["cash"] -= items[crypto] * amout
         else:
             await response(ctx, f"You don't have enough money.")
     elif action == "sell":
         if data[ctx.author.name]["cryptos"][crypto] >= amout:
-            await response(ctx, f"You sold `{amout}x {crypto}` for `{items[crypto] * amout}{cashSymbol}`.")
+            await response(ctx, f"You sold `{amout}x {crypto}` for `{items[crypto] * amout}€`.")
             data[ctx.author.name]["cryptos"][crypto] -= amout
             data[ctx.author.name]["cash"] += items[crypto] * amout
         else:
