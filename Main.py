@@ -4,6 +4,7 @@ from os import system
 from gtts import gTTS
 import discord as dc
 
+from Scripts import Startup
 from Scripts.SFunctions import *
 from Scripts.SData import *
 
