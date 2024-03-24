@@ -1,42 +1,49 @@
 from bs4 import BeautifulSoup as BS
 from json import loads, dumps
-from os.path import exists
+from discord import Member
 from requests import get
-from os import mkdir
 
-for folder in ["Data/", "Sounds/"]:
-    if not exists(folder):
-        mkdir(folder)
-
-for dataFile in ["Cryptos.json", "Items.json", "Users.json"]:
-    if not exists(f"Data/{dataFile}"):
-        with open(f"Data/{dataFile}", "w") as file:
-            file.write("{}")
+from Scripts.SFunctions import *
 
 cashSymbol = "$"
 
 def readData(which: str) -> dict:
     with open(f"Data/{which}.json", "r") as dataFile:
-        return dict(loads(dataFile.read()))
+        return loads(dataFile.read())
 
 def writeData(which: str, data: dict):
     with open(f"Data/{which}.json", "w") as dataFile:
         dataFile.write(dumps(data, indent=4, sort_keys=True))
 
-def getPrices():
-    _updatePrices()
+def doMemberData(member: Member):
+    data = readData("Users")
 
-    output = {}
+    if member.bot:
+        return None
+    
+    print("Database", f"Refreshing '{member.name}'")
+
+    if member.name not in data:
+        data[member.name] = {
+            "cash": 100,
+            "items": {},
+            "cryptos": {}
+        }
+
     for inventory in ["Items", "Cryptos"]:
         items = readData(inventory)
-        itemText = ""
+
         for item in items:
-            itemText += f"\n`{item}: {items[item]}{cashSymbol}`"
-        output[inventory] = itemText
+            if item not in data[member.name][inventory.lower()]:
+                data[member.name][inventory.lower()][item] = 0
 
-    return f"Item prices:{output['Items']}\n\nCrypto prices:{output['Cryptos']}"
+        for item in list(data[member.name][inventory.lower()]):
+            if item not in items:
+                data[member.name][inventory.lower()].pop(item)
 
-def _updatePrices():
+    writeData("Users", data)
+
+def updatePrices():
     cryptoData = {}
 
     cryptos = [

@@ -1,83 +1,28 @@
-from datetime import datetime
-from hashlib import sha256
+from discord.ext import commands, tasks
 from os.path import exists
 from os import system
-
-from rich import print as _print
-from discord.ext import commands
-from mutagen.mp3 import MP3
-from asyncio import sleep
 from gtts import gTTS
 import discord as dc
 
-from Data import *
-
-def print(owner: str, msg: str):
-    _print(f"[bright_black]{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/bright_black] [blue bold]{owner}[/blue bold] {msg}")
-
-def doUserData(user: dc.User):
-    print("Database", f"Refreshing '{user.name}'")
-    data = readData("Users")
-
-    if str(user.id) not in data:
-        data[str(user.id)] = {
-            "name": "",
-            "cash": 100,
-            "xp": 0,
-            "items": {},
-            "cryptos": {}
-        }
-
-    for inventory in ["Items", "Cryptos"]:
-        items = readData(inventory)
-
-        for item in items:
-            if item not in data[str(user.id)][inventory.lower()]:
-                data[str(user.id)][inventory.lower()][item] = 0
-
-        for item in list(data[str(user.id)][inventory.lower()]):
-            if item not in items:
-                data[str(user.id)][inventory.lower()].pop(item)
-
-    data[str(user.id)]["name"] = user.name
-    writeData("Users", data)
-
-def genHash(msg: str) -> str:
-    return sha256(msg.encode()).hexdigest()
+from Scripts.SFunctions import *
+from Scripts.SData import *
 
 bot = commands.Bot(intents=dc.Intents.all())
 
-infoMsg: dc.Message = None
-
-async def response(ctx: commands.Context, msg: str):
-    await ctx.respond(embed=dc.Embed(description=msg))
-
-async def playSound(member: dc.Member, path: str):
-    voice: dc.VoiceClient = member.guild.voice_client
-    if voice != None:
-        await voice.disconnect()
-
-    voiceChannel: dc.VoiceChannel = member.voice.channel
-    if voiceChannel != None:
-        await voiceChannel.connect()
-
-        voice: dc.VoiceClient = member.guild.voice_client
-        if not voice.is_playing():
-            voice.play(dc.FFmpegPCMAudio(path))
-            await sleep(MP3(path).info.length)
-            await voice.disconnect()
+@tasks.loop(minutes=5)
+async def priceUpdater():
+    updatePrices()
+    print("Prices", "Updated.")
 
 @bot.event
 async def on_ready():
-    global infoMsg
-
     await bot.change_presence(activity=dc.Activity(type=dc.ActivityType.playing, name="with joe mama"))
     print("Main", f"Logged in as {bot.user} on {len(bot.guilds)} guild(s)!")
 
     print("Database", "Syncing users...")
     for guild in bot.guilds:
         async for member in guild.fetch_members():
-            doUserData(member)
+            doMemberData(member)
     print("Database", "Done.")
 
     print("App", "Syncing commands...")
@@ -86,15 +31,11 @@ async def on_ready():
         print("App", f"Synced '{cmd.name}'")
     print("App", "Done.")
 
-@bot.event
-async def on_member_join(member: dc.Member):
-    doUserData(member)
+    await priceUpdater.start()
 
 @bot.event
-async def on_message(message: dc.Message):
-    data = readData("Users")
-    data[str(message.author.id)]["xp"] += 1
-    writeData("Users", data)
+async def on_member_join(member: dc.Member):
+    doMemberData(member)
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def ping(ctx: commands.Context):
@@ -103,7 +44,7 @@ async def ping(ctx: commands.Context):
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def wallet(ctx: commands.Context):
     data = readData("Users")
-    await response(ctx, f"In your wallet are `{data[str(ctx.author.id)]['cash']}{cashSymbol}`.")
+    await response(ctx, f"In your wallet are `{data[ctx.author.name]['cash']}{cashSymbol}`.")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def inventory(ctx: commands.Context):
@@ -111,9 +52,9 @@ async def inventory(ctx: commands.Context):
     outputs = {}
     for inventory in ["items", "cryptos"]:
         itemText = ""
-        for item in data[str(ctx.author.id)][inventory]:
-            if data[str(ctx.author.id)][inventory][item] > 0:
-                itemText += f"\n`{data[str(ctx.author.id)][inventory][item]}x {item}`"
+        for item in data[ctx.author.name][inventory]:
+            if data[ctx.author.name][inventory][item] > 0:
+                itemText += f"\n`{data[ctx.author.name][inventory][item]}x {item}`"
         if len(itemText) > 0: outputs[inventory] = itemText
     
     msg = ""
@@ -126,6 +67,18 @@ async def inventory(ctx: commands.Context):
         await response(ctx, "Your inventory is empty.")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
+async def prices(ctx: commands.Context):
+    output = {}
+    for inventory in ["Items", "Cryptos"]:
+        items = readData(inventory)
+        itemText = ""
+        for item in items:
+            itemText += f"\n`{item}: {items[item]}{cashSymbol}`"
+        output[inventory] = itemText
+
+    await response(ctx, f"Item prices:{output['Items']}\n\nCrypto prices:{output['Cryptos']}")
+
+@bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 @dc.option("action", autocomplete=lambda: ["buy", "sell"])
 @dc.option("item", autocomplete=lambda: [item for item in readData("Items")])
 async def item(ctx: commands.Context, action: str, item: str, amout: int = 1):
@@ -133,17 +86,17 @@ async def item(ctx: commands.Context, action: str, item: str, amout: int = 1):
     items = readData("Items")
 
     if action == "buy":
-        if data[str(ctx.author.id)]["cash"] >= items[item] * amout:
+        if data[ctx.author.name]["cash"] >= items[item] * amout:
             await response(ctx, f"You bought `{amout}x {item}` for `{items[item] * amout}{cashSymbol}`.")
-            data[str(ctx.author.id)]["items"][item] += 1 * amout
-            data[str(ctx.author.id)]["cash"] -= items[item] * amout
+            data[ctx.author.name]["items"][item] += 1 * amout
+            data[ctx.author.name]["cash"] -= items[item] * amout
         else:
             await response(ctx, f"You don't have enough money.")
     elif action == "sell":
-        if data[str(ctx.author.id)]["items"][item] >= amout:
+        if data[ctx.author.name]["items"][item] >= amout:
             await response(ctx, f"You sold `{amout}x {item}` for `{items[item] * amout}{cashSymbol}`.")
-            data[str(ctx.author.id)]["items"][item] -= amout
-            data[str(ctx.author.id)]["cash"] += items[item] * amout
+            data[ctx.author.name]["items"][item] -= amout
+            data[ctx.author.name]["cash"] += items[item] * amout
         else:
             await response(ctx, f"You don't have enough `{item}s`.")
     
@@ -157,17 +110,17 @@ async def crypto(ctx: commands.Context, action: str, crypto: str, amout: int = 1
     items = readData("Cryptos")
 
     if action == "buy":
-        if data[str(ctx.author.id)]["cash"] >= items[crypto] * amout:
+        if data[ctx.author.name]["cash"] >= items[crypto] * amout:
             await response(ctx, f"You bought `{amout}x {crypto}` for `{items[crypto] * amout}{cashSymbol}`.")
-            data[str(ctx.author.id)]["cryptos"][crypto] += 1 * amout
-            data[str(ctx.author.id)]["cash"] -= items[crypto] * amout
+            data[ctx.author.name]["cryptos"][crypto] += 1 * amout
+            data[ctx.author.name]["cash"] -= items[crypto] * amout
         else:
             await response(ctx, f"You don't have enough money.")
     elif action == "sell":
-        if data[str(ctx.author.id)]["cryptos"][crypto] >= amout:
+        if data[ctx.author.name]["cryptos"][crypto] >= amout:
             await response(ctx, f"You sold `{amout}x {crypto}` for `{items[crypto] * amout}{cashSymbol}`.")
-            data[str(ctx.author.id)]["cryptos"][crypto] -= amout
-            data[str(ctx.author.id)]["cash"] += items[crypto] * amout
+            data[ctx.author.name]["cryptos"][crypto] -= amout
+            data[ctx.author.name]["cash"] += items[crypto] * amout
         else:
             await response(ctx, f"You don't have enough `{crypto}s`.")
     
