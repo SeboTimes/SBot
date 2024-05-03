@@ -97,7 +97,7 @@ async def stop(ctx: commands.Context):
 async def pause(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
-        await response(ctx, f"Pausing `{queue[0]}` in `{voice.channel}`")
+        await response(ctx, f"Pausing `{_queue[0]}` in `{voice.channel}`")
         voice.pause()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
@@ -106,7 +106,7 @@ async def pause(ctx: commands.Context):
 async def resume(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
-        await response(ctx, f"Resuming `{queue[0]}` in `{voice.channel}`")
+        await response(ctx, f"Resuming `{_queue[0]}` in `{voice.channel}`")
         voice.resume()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
@@ -115,7 +115,7 @@ async def resume(ctx: commands.Context):
 async def skip(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
-        await response(ctx, f"Skiped `{queue[0]}` in `{voice.channel}`")
+        await response(ctx, f"Skiped `{_queue[0]}` in `{voice.channel}`")
         voice.stop()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
