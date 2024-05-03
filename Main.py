@@ -140,7 +140,7 @@ async def play(ctx: commands.Context, url: str):
 
             if voice.is_connected():
                 if not exists(filename):
-                    system(f"yt-dlp -x --audio-format mp3 -o {filename} \"{_queue[0]}\"")
+                    system(f"yt-dlp -x --audio-format mp3 -o \"{filename}\" \"{_queue[0]}\"")
                 await voice.play(dc.FFmpegPCMAudio(filename), wait_finish=True)
             
             _queue.pop(0)
