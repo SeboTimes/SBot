@@ -136,7 +136,7 @@ async def play(ctx: commands.Context, url: str):
             return
 
         while len(_queue) > 0:
-            filename = f"Sounds/{genHash(fetchYtData(_queue[0]))}.mp3"
+            filename = f"Sounds/{fetchYtData(_queue[0])}.mp3"
 
             if voice.is_connected():
                 if not exists(filename):
