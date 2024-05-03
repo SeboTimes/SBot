@@ -97,7 +97,7 @@ async def stop(ctx: commands.Context):
 async def pause(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
-        await response(ctx, f"Pausing playback in `{voice.channel}`")
+        await response(ctx, f"Pausing `{queue[0]}` in `{voice.channel}`")
         voice.pause()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
@@ -106,7 +106,7 @@ async def pause(ctx: commands.Context):
 async def resume(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
-        await response(ctx, f"Resuming playback in `{voice.channel}`")
+        await response(ctx, f"Resuming `{queue[0]}` in `{voice.channel}`")
         voice.resume()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
@@ -115,7 +115,7 @@ async def resume(ctx: commands.Context):
 async def skip(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
-        await response(ctx, f"Resuming playback in `{voice.channel}`")
+        await response(ctx, f"Skiped `{queue[0]}` in `{voice.channel}`")
         voice.stop()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
@@ -124,7 +124,7 @@ async def skip(ctx: commands.Context):
 async def play(ctx: commands.Context, url: str):
     if url.find("music.youtube.com") != -1:
         _queue.append(url)
-        await response(ctx, f"Added `{url}` to the queue.")
+        await response(ctx, f"Added `{fetchYtData(url)}` to the queue.")
 
         if ctx.guild.voice_client == None:
             await ctx.author.voice.channel.connect()
@@ -136,7 +136,7 @@ async def play(ctx: commands.Context, url: str):
             return
 
         while len(_queue) > 0:
-            filename = f"Sounds/{genHash(_queue[0])}.mp3"
+            filename = f"Sounds/{genHash(fetchYtData(_queue[0]))}.mp3"
 
             if voice.is_connected():
                 if not exists(filename):
@@ -153,7 +153,7 @@ async def play(ctx: commands.Context, url: str):
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def queue(ctx: commands.Context):
     if len(_queue) > 0:
-        await response(ctx, f"Queue:\n`{"\n".join(song for song in _queue)}`")
+        await response(ctx, f"Queue:\n`{"\n".join(fetchYtData(song) for song in _queue)}`")
     else:
         await response(ctx, "Queue is empty.")
 
