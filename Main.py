@@ -1,7 +1,6 @@
 from discord.ext import commands, tasks
 from os.path import exists
 from os import system
-from gtts import gTTS
 import discord as dc
 
 from Scripts import Startup
@@ -10,6 +9,8 @@ from Scripts.SData import *
 
 bot = commands.Bot(intents=dc.Intents.all())
 
+_queue = []
+
 @tasks.loop(minutes=5)
 async def priceUpdater():
     updatePrices()
@@ -17,7 +18,7 @@ async def priceUpdater():
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=dc.Activity(type=dc.ActivityType.playing, name="with joe mama"))
+    await bot.change_presence(activity=dc.Activity(type=dc.ActivityType.playing, name="with your life"))
     print("Main", f"Logged in as {bot.user} on {len(bot.guilds)} guild(s)!")
 
     print("Database", "Syncing users...")
@@ -38,6 +39,10 @@ async def on_ready():
 async def on_member_join(member: dc.Member):
     doMemberData(member)
 
+@bot.event
+async def on_application_command(ctx: commands.Context):
+    print("User", f"'{ctx.author.name}' used '{ctx.command.name}'")
+
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def ping(ctx: commands.Context):
     await response(ctx, f"Pong: {int(bot.latency * 1000)}ms")
@@ -49,63 +54,15 @@ async def wallet(ctx: commands.Context):
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def inventory(ctx: commands.Context):
-    data = readData("Users")
-    outputs = {}
-    for inventory in ["items", "cryptos"]:
-        itemText = ""
-        for item in data[ctx.author.name][inventory]:
-            if data[ctx.author.name][inventory][item] > 0:
-                itemText += f"\n`{data[ctx.author.name][inventory][item]}x {item}`"
-        if len(itemText) > 0: outputs[inventory] = itemText
-    
-    msg = ""
-    for output in outputs:
-        msg += f"{output[0].upper()+output[1:]}: {outputs[output]}\n\n"
-
-    if len(msg) > 0:
-        await response(ctx, msg)
-    else:
-        await response(ctx, "Your inventory is empty.")
+    await response(ctx, f"Your Inventory:\n{"\n".join([f"`{key}: {value}`" for (key, value) in readData("Users")[ctx.author.name]["cryptos"].items()])}")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def prices(ctx: commands.Context):
-    output = {}
-    for inventory in ["Items", "Cryptos"]:
-        items = readData(inventory)
-        itemText = ""
-        for item in items:
-            itemText += f"\n`{item}: {items[item]}€`"
-        output[inventory] = itemText
-
-    await response(ctx, f"Item prices:{output['Items']}\n\nCrypto prices:{output['Cryptos']}")
+    await response(ctx, f"Crypto prices:\n{"\n".join([f"`{key}: {value}€`" for (key, value) in readData("Cryptos").items()])}")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
-@dc.option("action", autocomplete=lambda: ["buy", "sell"])
-@dc.option("item", autocomplete=lambda: [item for item in readData("Items")])
-async def item(ctx: commands.Context, action: str, item: str, amout: int = 1):
-    data = readData("Users")
-    items = readData("Items")
-
-    if action == "buy":
-        if data[ctx.author.name]["cash"] >= items[item] * amout:
-            await response(ctx, f"You bought `{amout}x {item}` for `{items[item] * amout}€`.")
-            data[ctx.author.name]["items"][item] += 1 * amout
-            data[ctx.author.name]["cash"] -= items[item] * amout
-        else:
-            await response(ctx, f"You don't have enough money.")
-    elif action == "sell":
-        if data[ctx.author.name]["items"][item] >= amout:
-            await response(ctx, f"You sold `{amout}x {item}` for `{items[item] * amout}€`.")
-            data[ctx.author.name]["items"][item] -= amout
-            data[ctx.author.name]["cash"] += items[item] * amout
-        else:
-            await response(ctx, f"You don't have enough `{item}s`.")
-    
-    writeData("Users", data)
-
-@bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
-@dc.option("action", autocomplete=lambda: ["buy", "sell"])
-@dc.option("crypto", autocomplete=lambda: [crypto for crypto in readData("Cryptos")])
+@dc.option("action", autocomplete=lambda x: ["buy", "sell"])
+@dc.option("crypto", autocomplete=lambda x: [crypto for crypto in readData("Cryptos")])
 async def crypto(ctx: commands.Context, action: str, crypto: str, amout: int = 1):
     data = readData("Users")
     items = readData("Cryptos")
@@ -128,7 +85,7 @@ async def crypto(ctx: commands.Context, action: str, crypto: str, amout: int = 1
     writeData("Users", data)
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
-async def leave(ctx: commands.Context):
+async def stop(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
         await response(ctx, f"Left channel `{voice.channel}`")
@@ -141,7 +98,7 @@ async def pause(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
         await response(ctx, f"Pausing playback in `{voice.channel}`")
-        await voice.pause()
+        voice.pause()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
 
@@ -150,30 +107,55 @@ async def resume(ctx: commands.Context):
     voice: dc.VoiceClient = ctx.guild.voice_client
     if voice != None:
         await response(ctx, f"Resuming playback in `{voice.channel}`")
-        await voice.resume()
+        voice.resume()
+    else:
+        await response(ctx, f"Bot is currently not in a voice channel")
+
+@bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
+async def skip(ctx: commands.Context):
+    voice: dc.VoiceClient = ctx.guild.voice_client
+    if voice != None:
+        await response(ctx, f"Resuming playback in `{voice.channel}`")
+        voice.stop()
     else:
         await response(ctx, f"Bot is currently not in a voice channel")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def play(ctx: commands.Context, url: str):
     if url.find("music.youtube.com") != -1:
-        filename = f"Sounds/{genHash(url)}.mp3"
+        _queue.append(url)
+        await response(ctx, f"Added `{url}` to the queue.")
 
-        await response(ctx, f"Playing `{url}`")
-        if not exists(filename):
-            system(f"yt-dlp -x --audio-format mp3 -o {filename} \"{url}\"")
-        await playSound(ctx.author, filename)
+        if ctx.guild.voice_client == None:
+            await ctx.author.voice.channel.connect()
+        else:
+            return
+
+        voice: dc.VoiceClient = ctx.guild.voice_client
+        if voice == None:
+            return
+
+        while len(_queue) > 0:
+            filename = f"Sounds/{genHash(_queue[0])}.mp3"
+
+            if voice.is_connected():
+                if not exists(filename):
+                    system(f"/home/sebo/.local/bin/yt-dlp -x --audio-format mp3 -o {filename} \"{_queue[0]}\"")
+                await voice.play(dc.FFmpegPCMAudio(filename), wait_finish=True)
+            
+            _queue.pop(0)
+
+        if voice.is_connected():
+            await voice.disconnect()
     else:
         await response(ctx, f"Invalid URL")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
-async def tts(ctx: commands.Context, what: str, lang: str = "de"):
-    filename = f"Sounds/{genHash(what+lang)}.mp3"
-
-    await response(ctx, f"TTS message requested: `{lang[:2]}`\n```{what}```")
-    if not exists(filename):
-        gTTS(what, lang=lang[:2]).save(filename)
-    await playSound(ctx.author, filename)
+async def queue(ctx: commands.Context):
+    if len(_queue) > 0:
+        await response(ctx, f"Queue:\n`{"\n".join(song for song in _queue)}`")
+    else:
+        await response(ctx, "Queue is empty.")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def clear(ctx: commands.Context):

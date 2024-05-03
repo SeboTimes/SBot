@@ -17,27 +17,24 @@ def doMemberData(member: Member):
     data = readData("Users")
 
     if member.bot:
-        return None
+        return
     
     print("Database", f"Refreshing '{member.name}'")
 
     if member.name not in data:
         data[member.name] = {
             "cash": 100,
-            "items": {},
             "cryptos": {}
         }
 
-    for inventory in ["Items", "Cryptos"]:
-        items = readData(inventory)
+    cryptos = readData("Cryptos")
+    for crypto in cryptos:
+        if crypto not in data[member.name]["cryptos"]:
+            data[member.name]["cryptos"][crypto] = 0
 
-        for item in items:
-            if item not in data[member.name][inventory.lower()]:
-                data[member.name][inventory.lower()][item] = 0
-
-        for item in list(data[member.name][inventory.lower()]):
-            if item not in items:
-                data[member.name][inventory.lower()].pop(item)
+    for crypto in list(data[member.name]["cryptos"]):
+        if crypto not in cryptos:
+            data[member.name]["cryptos"].pop(crypto)
 
     writeData("Users", data)
 
