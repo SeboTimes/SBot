@@ -54,11 +54,11 @@ async def wallet(ctx: commands.Context):
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def inventory(ctx: commands.Context):
-    await response(ctx, f"Your Inventory:\n{'\n'.join([f'`{key}: {value}`' for (key, value) in readData('Users')[ctx.author.name]['cryptos'].items()])}")
+    await response(ctx, f"Your Inventory:\n{"\n".join([f"`{key}: {value}`" for (key, value) in readData("Users")[ctx.author.name]["cryptos"].items()])}")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def prices(ctx: commands.Context):
-    await response(ctx, f"Crypto prices:\n{'\n'.join([f'`{key}: {value}€`' for (key, value) in readData('Cryptos').items()])}")
+    await response(ctx, f"Crypto prices:\n{"\n".join([f"`{key}: {value}€`" for (key, value) in readData("Cryptos").items()])}")
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 @dc.option("action", autocomplete=lambda x: ["buy", "sell"])
@@ -153,7 +153,7 @@ async def play(ctx: commands.Context, url: str):
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def queue(ctx: commands.Context):
     if len(_queue) > 0:
-        await response(ctx, f"Queue:\n`{'\n'.join(song for song in _queue)}`")
+        await response(ctx, f"Queue:\n`{"\n".join(song for song in _queue)}`")
     else:
         await response(ctx, "Queue is empty.")
 
