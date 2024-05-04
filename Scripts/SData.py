@@ -42,7 +42,7 @@ def fetchYtData(url: str) -> str:
     songResp = get(url)
     songSoup = BS(songResp.text, "html.parser")
     songText = songSoup.find_all("meta", {"property": "og:video:tag"})
-    return f"{songText[3]["content"]} - {songText[0]["content"]}"
+    return f"{songText[-1]["content"]} - {songText[0]["content"]}"
 
 def updatePrices():
     cryptoData = {}
