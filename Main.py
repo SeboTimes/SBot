@@ -123,6 +123,7 @@ async def skip(ctx: commands.Context):
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def play(ctx: commands.Context, url: str):
     if url.find("music.youtube.com") != -1:
+        url = url.split("&")[0]
         _queue.append(url)
         await response(ctx, f"Added `{fetchYtData(url)}` to the queue.")
 
@@ -136,7 +137,7 @@ async def play(ctx: commands.Context, url: str):
             return
 
         while len(_queue) > 0:
-            filename = f"Sounds/{fetchYtData(_queue[0])}.mp3"
+            filename = f"Sounds/{genHash(url)}.mp3"
 
             if voice.is_connected():
                 if not exists(filename):
