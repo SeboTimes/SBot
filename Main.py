@@ -122,34 +122,31 @@ async def skip(ctx: commands.Context):
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def play(ctx: commands.Context, url: str):
-    if url.find("youtube.com") != -1:
-        url = url.split("&")[0]
-        _queue.append(url)
-        await response(ctx, f"Added `{fetchYtData(url)}` to the queue.")
+    url = url.split("&")[0]
+    _queue.append(url)
+    await response(ctx, f"Added `{fetchYtData(url)}` to the queue.")
 
-        if ctx.guild.voice_client == None:
-            await ctx.author.voice.channel.connect()
-        else:
-            return
+    if ctx.guild.voice_client == None:
+        await ctx.author.voice.channel.connect()
+    else:
+        return
 
-        voice: dc.VoiceClient = ctx.guild.voice_client
-        if voice == None:
-            return
+    voice: dc.VoiceClient = ctx.guild.voice_client
+    if voice == None:
+        return
 
-        while len(_queue) > 0:
-            filename = f"Sounds/{genHash(_queue[0])}.mp3"
-
-            if voice.is_connected():
-                if not exists(filename):
-                    system(f"yt-dlp -x --audio-format mp3 -o \"{filename}\" \"{_queue[0]}\"")
-                await voice.play(dc.FFmpegPCMAudio(filename), wait_finish=True)
-            
-            _queue.pop(0)
+    while len(_queue) > 0:
+        filename = f"Sounds/{genHash(_queue[0])}.mp3"
 
         if voice.is_connected():
-            await voice.disconnect()
-    else:
-        await response(ctx, f"Invalid URL")
+            if not exists(filename):
+                system(f"yt-dlp -x --audio-format mp3 -o \"{filename}\" \"{_queue[0]}\"")
+            await voice.play(dc.FFmpegPCMAudio(filename), wait_finish=True)
+        
+        _queue.pop(0)
+
+    if voice.is_connected():
+        await voice.disconnect()
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def queue(ctx: commands.Context):
