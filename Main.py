@@ -11,7 +11,7 @@ bot = commands.Bot(intents=dc.Intents.all())
 
 _queue = []
 
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=10)
 async def priceUpdater():
     updatePrices()
     print("Prices", "Updated.")
