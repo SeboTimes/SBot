@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup as BS
 from json import loads, dumps
+from yt_dlp import YoutubeDL
 from discord import Member
 from requests import get
 
@@ -39,12 +40,10 @@ def doMemberData(member: Member):
     writeData("Users", data)
 
 def fetchYtData(url: str) -> str:
+    urlInfo = YoutubeDL().extract_info(url, False)
     data = readData("Songs")
     if url not in data:
-        songResp = get(url)
-        songSoup = BS(songResp.text, "html.parser")
-        songText = songSoup.find_all("meta", {"property": "og:video:tag"})
-        data[url] = f"{songText[-1]["content"]} - {songText[0]["content"]}"
+        data[url] = urlInfo["title"]
         writeData("Songs", data)
     return data[url]
 
