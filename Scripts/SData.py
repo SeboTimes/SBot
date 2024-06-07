@@ -64,7 +64,7 @@ def updatePrices():
     for crypto in cryptos:
         cryptoResp = get(f"https://coinmarketcap.com/currencies/{crypto.replace(' ', '-')}/")
         cryptoSoup = BS(cryptoResp.text, "html.parser")
-        cryptoText: str = cryptoSoup.find_all("span", {"class":"sc-f70bb44c-0 jxpCgO base-text"})[0].text[1:].replace(",", "")
+        cryptoText: str = cryptoSoup.find_all("span", {"class":"sc-d1ede7e3-0 fsQm base-text"})[0].text[1:].replace(",", "")
         cryptoData[crypto] = int(cryptoText.split(".")[0])
     
     writeData("Cryptos", cryptoData)
