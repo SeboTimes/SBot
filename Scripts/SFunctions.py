@@ -12,5 +12,5 @@ def print(owner: str, msg: str):
 def genHash(msg: str) -> str:
     return sha256(msg.encode()).hexdigest()
 
-async def response(ctx: commands.Context, msg: str):
-    await ctx.respond(embed=dc.Embed(description=msg))
+async def response(ctx: commands.Context, msg: str) -> list[dc.Interaction, dc.WebhookMessage]:
+    return await ctx.respond(embed=dc.Embed(description=msg))
