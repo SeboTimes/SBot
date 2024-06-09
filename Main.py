@@ -124,7 +124,9 @@ async def skip(ctx: commands.Context):
 async def play(ctx: commands.Context, url: str):
     url = url.split("&")[0]
     _queue.append(url)
-    await response(ctx, f"Added `{fetchYtData(url)}` to the queue.")
+
+    msg = await response(ctx, f"Loading...")
+    await msg.edit(embed=dc.Embed(description=f"Added `{fetchYtData(url)}` to the queue."))
 
     if ctx.guild.voice_client == None:
         await ctx.author.voice.channel.connect()
