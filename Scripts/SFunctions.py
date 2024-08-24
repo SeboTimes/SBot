@@ -4,10 +4,8 @@ from hashlib import sha256
 from asyncio import sleep
 import discord as dc
 
-_print = print
-
-def print(owner: str, msg: str):
-    _print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{owner}] {msg}")
+def sPrint(owner: str, msg: str):
+    print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{owner}] {msg}")
 
 def genHash(msg: str) -> str:
     return sha256(msg.encode()).hexdigest()
