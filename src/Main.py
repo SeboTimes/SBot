@@ -128,5 +128,4 @@ async def queue(ctx: dc.ApplicationContext):
   else:
     await response(ctx, cfg["Error.Queue"])
 
-with open("token", "r") as tokenFile:
-  bot.run(tokenFile.read())
+bot.run(cfg["Token"])
