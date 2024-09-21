@@ -1,6 +1,2 @@
-Scripts/__pycache__
-.vscode/
-Sounds/
-Data/
-token
-start
+src/__pycache__/
+Config.json
