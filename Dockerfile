@@ -2,6 +2,7 @@ FROM python:3.12.7
 
 WORKDIR /src
 
+RUN apt update
 RUN apt install -y ffmpeg
 
 RUN git clone https://github.com/SeboTimes/SBot.git .
