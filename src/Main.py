@@ -14,6 +14,25 @@ soundQueue = []
 async def response(ctx: commands.Context, msg: str, title: str = None, img: str = None):
   await ctx.respond(embed=dc.Embed(title=title, description=msg, thumbnail=img))
 
+async def playQueue(ctx: dc.ApplicationContext):
+  if ctx.guild.voice_client == None:
+    await ctx.author.voice.channel.connect()
+  else:
+    return
+
+  voice: dc.VoiceClient = ctx.guild.voice_client
+  if voice == None:
+    return
+
+  while len(soundQueue) > 0:
+    if voice.is_connected():
+      await voice.play(dc.FFmpegOpusAudio(soundQueue[0]["url"], **FFMPEG_OPTIONS), wait_finish=True)
+    
+    soundQueue.pop(0)
+
+  if voice.is_connected():
+    await voice.disconnect()
+
 @bot.event
 async def on_ready():
   await bot.change_presence(activity=dc.Activity(type=dc.ActivityType(cfg["Activity.Type"]), name=cfg["Activity.Name"]))
@@ -63,27 +82,17 @@ async def ai(ctx: dc.ApplicationContext, prompt: str):
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def play(ctx: dc.ApplicationContext, url: str):
   await ctx.defer()
+  data = fetchYtData(url)
 
-  soundQueue.append(fetchYtData(url))
+  if "entries" in data:
+    for entry in data["entries"]:
+      soundQueue.append(entry)
+  else:
+    soundQueue.append(data)
+  
   await response(ctx, "added to the queue", soundQueue[-1]["title"], soundQueue[-1]["thumbnail"])
 
-  if ctx.guild.voice_client == None:
-    await ctx.author.voice.channel.connect()
-  else:
-    return
-
-  voice: dc.VoiceClient = ctx.guild.voice_client
-  if voice == None:
-    return
-
-  while len(soundQueue) > 0:
-    if voice.is_connected():
-      await voice.play(dc.FFmpegOpusAudio(soundQueue[0]["url"]), wait_finish=True)
-    
-    soundQueue.pop(0)
-
-  if voice.is_connected():
-    await voice.disconnect()
+  await playQueue(ctx)
 
 @bot.slash_command(guild_ids=[guild.id for guild in bot.guilds])
 async def stop(ctx: dc.ApplicationContext):

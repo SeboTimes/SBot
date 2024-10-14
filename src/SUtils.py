@@ -4,6 +4,18 @@ from os.path import exists
 from hashlib import sha256
 from json import dumps
 
+FFMPEG_OPTIONS = {
+  "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+  "options": "-vn"
+}
+
+YTDL_OPTIONS = {
+  "format": "bestaudio",
+  "noplaylist": True,
+  "quiet": True,
+  "no_warnings": True
+}
+
 if not exists("Config.json"):
   with open("Config.json", "w") as cfgFile:
     cfg = {}
@@ -25,4 +37,5 @@ def genHash(msg: str) -> str:
   return sha256(msg.encode()).hexdigest()
 
 def fetchYtData(url: str) -> dict[str]:
-  return YoutubeDL({"format": "bestaudio"}).extract_info(url, False)
+  with YoutubeDL(YTDL_OPTIONS) as ytdl:
+    return ytdl.extract_info(url, download=False)
