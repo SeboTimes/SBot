@@ -1,0 +1,11 @@
+{
+  "Token": "",
+  "Activity.Type": 3,
+  "Activity.Name": "you",
+  "AI.Host": "localhost:11434",
+  "AI.Model": "llama3.1",
+  "AI.System": "",
+  "Error.NoPerm": "You don't have the required permissions.",
+  "Error.Queue": "Queue is empty.",
+  "Error.Voice": "Bot is not in a voice channel."
+}
